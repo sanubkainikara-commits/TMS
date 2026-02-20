@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Transport Reports</title>
+<style>
+body { font-family:Arial; padding:20px;}
+table { width:100%; border-collapse:collapse; margin-top:15px;}
+th,td { border:1px solid #ccc; padding:8px; text-align:center;}
+select,input { padding:6px; margin-right:10px;}
+</style>
+</head>
+<body>
+
+<h2>Freight Reports</h2>
+
+<select id="reportType">
+    <option value="daily">Daily</option>
+    <option value="weekly">Weekly</option>
+    <option value="monthly">Monthly</option>
+</select>
+
+<input type="date" id="dateInput">
+<button onclick="loadReport()">Generate</button>
+
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Dealer</th>
+<th>Total LRs</th>
+<th>Total Boxes</th>
+<th>Total Weight</th>
+<th>Total Freight</th>
+</tr>
+</thead>
+<tbody id="reportBody"></tbody>
+</table>
+
+<script>
+async function loadReport(){
+    const type = document.getElementById("reportType").value;
+    const date = document.getElementById("dateInput").value;
+
+    const res = await fetch(`api/reports.php?type=${type}&date=${date}`);
+    const data = await res.json();
+
+    let html="";
+    data.forEach(row=>{
+        html+=`<tr>
+        <td>${row.route_name}</td>
+        <td>${row.dealer_name}</td>
+        <td>${row.total_lrs}</td>
+        <td>${row.total_boxes}</td>
+        <td>${row.total_weight}</td>
+        <td>${row.total_freight}</td>
+        </tr>`;
+    });
+
+    document.getElementById("reportBody").innerHTML=html;
+}
+</script>
+
+</body>
+</html>

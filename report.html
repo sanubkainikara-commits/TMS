@@ -1,0 +1,56 @@
+C:\xampp\htdocs\tms\
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daily Freight Report</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<h2>Daily Freight Report</h2>
+
+<input type="date" id="reportDate">
+<button onclick="loadReport()">Generate Report</button>
+
+<table border="1" id="reportTable">
+    <thead>
+        <tr>
+            <th>LR No</th>
+            <th>Sender</th>
+            <th>Receiver</th>
+            <th>Freight</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h3 id="totalFreight"></h3>
+
+<script>
+async function loadReport() {
+    const date = document.getElementById("reportDate").value;
+
+    const response = await fetch(`api/daily_report.php?date=${date}`);
+    const result = await response.json();
+
+    const tbody = document.querySelector("#reportTable tbody");
+    tbody.innerHTML = "";
+
+    result.records.forEach(record => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${record.lr_number}</td>
+                <td>${record.sender_name}</td>
+                <td>${record.receiver_name}</td>
+                <td>${record.freight_amount}</td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("totalFreight").innerText =
+        "Total Freight: ₹" + result.totalFreight;
+}
+</script>
+
+</body>
+</html>

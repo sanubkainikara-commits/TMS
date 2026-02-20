@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create LR - Dispatch</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { width:100%; border-collapse: collapse; margin-top:15px;}
+        th, td { border:1px solid #ccc; padding:8px; text-align:center;}
+        select, input { padding:6px; margin:5px 0;}
+        .summary { margin-top:15px; font-weight:bold; }
+        button { padding:8px 15px; cursor:pointer; }
+    </style>
+</head>
+<body>
+
+<h2>Create LR (Dispatch Module)</h2>
+
+<label>Route:</label>
+<select id="routeSelect"></select>
+
+<label>Dealer:</label>
+<select id="dealerSelect"></select>
+
+<label>Vehicle No:</label>
+<input type="text" id="vehicleNo">
+
+<table id="invoiceTable">
+    <thead>
+        <tr>
+            <th>Select</th>
+            <th>Invoice No</th>
+            <th>Boxes</th>
+            <th>Gross Weight</th>
+            <th>Freight</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div class="summary">
+    Total Invoices: <span id="totalInvoices">0</span> |
+    Total Boxes: <span id="totalBoxes">0</span> |
+    Total Weight: <span id="totalWeight">0</span> |
+    Total Freight: ₹<span id="totalFreight">0</span>
+</div>
+
+<button onclick="createLR()">Create LR</button>
+
+<script>
+
+async function loadRoutes() {
+    const res = await fetch("api/fetch_data.php?type=routes");
+    const routes = await res.json();
+    const routeSelect = document.getElementById("routeSelect");
+    routeSelect.innerHTML = "<option value=''>Select Route</option>";
+    routes.forEach(r => {
+        routeSelect.innerHTML += `<option value="${r}">${r}</option>`;
+    });
+}
+
+async function loadDealers(route) {
+    const res = await fetch(`api/fetch_data.php?type=dealers&route=${route}`);
+    const dealers = await res.json();
+    const dealerSelect = document.getElementById("dealerSelect");
+    dealerSelect.innerHTML = "<option value=''>Select Dealer</option>";
+    dealers.forEach(d => {
+        dealerSelect.innerHTML += `<option value="${d}">${d}</option>`;
+    });
+}
+
+async function loadInvoices(route, dealer) {
+    const res = await fetch(`api/fetch_data.php?type=invoices&route=${route}&dealer=${dealer}`);
+    const invoices = await res.json();
+    const tbody = document.querySelector("#invoiceTable tbody");
+    tbody.innerHTML = "";
+
+    invoices.forEach(inv => {
+        tbody.innerHTML += `
+        <tr>
+            <td><input type="checkbox" value="${inv.id}" 
+                data-boxes="${inv.no_of_boxes}" 
+                data-weight="${inv.gross_weight}" 
+                data-freight="${inv.freight_amount}"
+                onchange="calculateTotals()"></td>
+            <td>${inv.invoice_number}</td>
+            <td>${inv.no_of_boxes}</td>
+            <td>${inv.gross_weight}</td>
+            <td>${inv.freight_amount}</td>
+        </tr>`;
+    });
+}
+
+function calculateTotals() {
+    let totalInvoices=0, totalBoxes=0, totalWeight=0, totalFreight=0;
+    document.querySelectorAll("input[type=checkbox]:checked").forEach(cb => {
+        totalInvoices++;
+        totalBoxes += parseInt(cb.dataset.boxes);
+        totalWeight += parseFloat(cb.dataset.weight);
+        totalFreight += parseFloat(cb.dataset.freight);
+    });
+
+    document.getElementById("totalInvoices").innerText = totalInvoices;
+    document.getElementById("totalBoxes").innerText = totalBoxes;
+    document.getElementById("totalWeight").innerText = totalWeight.toFixed(2);
+    document.getElementById("totalFreight").innerText = totalFreight.toFixed(2);
+}
+
+async function createLR() {
+    const selected = Array.from(document.querySelectorAll("input[type=checkbox]:checked"))
+        .map(cb => cb.value);
+
+    if (selected.length === 0) {
+        alert("Select at least one invoice");
+        return;
+    }
+
+    const data = {
+        route: document.getElementById("routeSelect").value,
+        dealer: document.getElementById("dealerSelect").value,
+        vehicle: document.getElementById("vehicleNo").value,
+        invoices: selected
+    };
+
+    const res = await fetch("api/create_dispatch_lr.php", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    alert(result.message);
+    location.reload();
+}
+
+document.getElementById("routeSelect").addEventListener("change", e=>{
+    loadDealers(e.target.value);
+});
+document.getElementById("dealerSelect").addEventListener("change", e=>{
+    loadInvoices(routeSelect.value, e.target.value);
+});
+
+loadRoutes();
+</script>
+
+</body>
+</html>

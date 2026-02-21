@@ -4,65 +4,52 @@ include("../config/db.php");
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
+if ($_FILES['excel']['name']) {
 
-    $fileTmpPath = $_FILES['excelFile']['tmp_name'];
+    $fileName = $_FILES['excel']['tmp_name'];
+    $spreadsheet = IOFactory::load($fileName);
+    $sheet = $spreadsheet->getActiveSheet();
+    $rows = $sheet->toArray();
 
-    try {
-        $spreadsheet = IOFactory::load($fileTmpPath);
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
+    // Remove header row
+    array_shift($rows);
 
-        $insertedCount = 0;
+    foreach ($rows as $row) {
 
-        // Skip header row (row 0)
-        for ($i = 1; $i < count($rows); $i++) {
+        $invoice_number = $row[0];
+        $dealer_name = $row[1];
+        $route_name = $row[2];
+        $no_of_boxes = $row[3];
+        $gross_weight = $row[4];
+        $freight_amount = $row[5];
+        $invoice_date = $row[6];
 
-            if (empty($rows[$i][0])) {
-                continue; // skip empty rows
-            }
+        if (!$invoice_number) continue;
 
-            $lr_number = trim($rows[$i][0]);
-            $sender = trim($rows[$i][1]);
-            $receiver = trim($rows[$i][2]);
-            $origin = trim($rows[$i][3]);
-            $destination = trim($rows[$i][4]);
-            $vehicle = trim($rows[$i][5]);
-            $freight = floatval($rows[$i][6]);
-            $date = trim($rows[$i][7]);
+        $stmt = $conn->prepare("
+            INSERT INTO invoices 
+            (invoice_number, dealer_name, route_name, no_of_boxes, gross_weight, freight_amount, invoice_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
 
-            $stmt = $conn->prepare("INSERT INTO lorry_receipts 
-            (lr_number, sender_name, receiver_name, origin, destination, vehicle_number, freight_amount, lr_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param(
+            "sssidds",
+            $invoice_number,
+            $dealer_name,
+            $route_name,
+            $no_of_boxes,
+            $gross_weight,
+            $freight_amount,
+            $invoice_date
+        );
 
-            $stmt->bind_param(
-                "ssssssds",
-                $lr_number,
-                $sender,
-                $receiver,
-                $origin,
-                $destination,
-                $vehicle,
-                $freight,
-                $date
-            );
-
-            if ($stmt->execute()) {
-                $insertedCount++;
-            }
-
-            $stmt->close();
-        }
-
-        echo "<h2>Excel Uploaded Successfully!</h2>";
-        echo "<p>Total LRs Inserted: " . $insertedCount . "</p>";
-        echo "<a href='../index.html'>Go Back</a>";
-
-    } catch (Exception $e) {
-        echo "Error reading Excel file: " . $e->getMessage();
+        $stmt->execute();
     }
 
+    echo "Excel Uploaded Successfully!";
 } else {
-    echo "Invalid Request";
+    echo "No file selected.";
 }
+
+$conn->close();
 ?>

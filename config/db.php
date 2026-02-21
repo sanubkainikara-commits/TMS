@@ -1,4 +1,4 @@
-C:\xampp\htdocs\tms\config\
+
 <?php
 $host = "localhost";
 $user = "root";

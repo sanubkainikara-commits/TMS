@@ -53,3 +53,5 @@ if ($_FILES['excel']['name']) {
 
 $conn->close();
 ?>
+header("Location: ../upload.php?success=1");
+exit;

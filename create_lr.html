@@ -128,15 +128,24 @@ async function createLR() {
     });
 
     const result = await res.json();
+
+if (result.success) {
+    alert("LR Created Successfully! LR No: " + result.lr_number);
+    window.location.href = "print_lr.php?id=" + result.lr_id;
+} else {
     alert(result.message);
-    location.reload();
+}
 }
 
 document.getElementById("routeSelect").addEventListener("change", e=>{
-    loadDealers(e.target.value);
+    const route = e.target.value;
+    loadDealers(route);
 });
+
 document.getElementById("dealerSelect").addEventListener("change", e=>{
-    loadInvoices(routeSelect.value, e.target.value);
+    const dealer = e.target.value;
+    const route = document.getElementById("routeSelect").value;
+    loadInvoices(route, dealer);
 });
 
 loadRoutes();

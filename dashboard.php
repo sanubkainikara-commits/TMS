@@ -1,5 +1,3 @@
-
-<php echo "V2 TEST" ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -81,10 +79,16 @@
 
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand">Transport Management System</span>
-        </div>
-    </nav>
+    <div class="container-fluid d-flex justify-content-between">
+        
+        <span class="navbar-brand">Transport Management System</span>
+        
+        <button class="btn btn-primary" onclick="goHome()">
+            🏠 Home Dashboard
+        </button>
+
+    </div>
+</nav>
 
     <!-- Dashboard Cards -->
     <div id="dashboardCards" class="row g-4 mb-4">
@@ -132,7 +136,15 @@ function loadPage(page) {
     .then(res => res.text())
     .then(data => {
         document.getElementById("dashboardCards").style.display = "none";
-        document.getElementById("contentArea").innerHTML = data;
+        const content = document.getElementById("contentArea");
+        content.innerHTML = data;
+
+        // Execute scripts inside loaded content
+        content.querySelectorAll("script").forEach(oldScript => {
+            const newScript = document.createElement("script");
+            newScript.text = oldScript.text;
+            document.body.appendChild(newScript);
+        });
     });
 }
 
@@ -147,6 +159,11 @@ async function loadDashboardStats() {
 }
 
 loadDashboardStats();
+function goHome() {
+    document.getElementById("contentArea").innerHTML = "";
+    document.getElementById("dashboardCards").style.display = "flex";
+    loadDashboardStats(); // refresh stats
+}
 </script>
 
 

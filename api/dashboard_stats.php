@@ -1,36 +1,54 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+header("Content-Type: application/json");
+
 include("../config/db.php");
 
-$today = date("Y-m-d");
-$currentMonth = date("m");
-$currentYear = date("Y");
+$response = [
+    "todayFreight" => 0,
+    "monthlyFreight" => 0,
+    "pendingInvoices" => 0,
+    "totalLRs" => 0
+];
 
-// Today's Freight
-$stmt = $conn->prepare("SELECT SUM(total_freight) as total FROM lorry_receipts WHERE lr_date=?");
-$stmt->bind_param("s", $today);
-$stmt->execute();
-$todayFreight = $stmt->get_result()->fetch_assoc()['total'] ?? 0;
-
-// Monthly Freight
-$stmt = $conn->prepare("SELECT SUM(total_freight) as total FROM lorry_receipts WHERE MONTH(lr_date)=? AND YEAR(lr_date)=?");
-$stmt->bind_param("ss", $currentMonth, $currentYear);
-$stmt->execute();
-$monthlyFreight = $stmt->get_result()->fetch_assoc()['total'] ?? 0;
-
-// Pending Invoices
+// Pending invoices
 $result = $conn->query("SELECT COUNT(*) as count FROM invoices WHERE status='pending'");
-$pendingInvoices = $result->fetch_assoc()['count'];
+if ($result) {
+    $row = $result->fetch_assoc();
+    $response['pendingInvoices'] = $row['count'];
+}
 
 // Total LRs
 $result = $conn->query("SELECT COUNT(*) as count FROM lorry_receipts");
-$totalLRs = $result->fetch_assoc()['count'];
+if ($result) {
+    $row = $result->fetch_assoc();
+    $response['totalLRs'] = $row['count'];
+}
 
-echo json_encode([
-    "todayFreight" => $todayFreight,
-    "monthlyFreight" => $monthlyFreight,
-    "pendingInvoices" => $pendingInvoices,
-    "totalLRs" => $totalLRs
-]);
+// Today's Freight
+$result = $conn->query("
+    SELECT IFNULL(SUM(total_freight),0) as total 
+    FROM lorry_receipts 
+    WHERE DATE(lr_date)=CURDATE()
+");
+if ($result) {
+    $row = $result->fetch_assoc();
+    $response['todayFreight'] = $row['total'];
+}
 
+// Monthly Freight
+$result = $conn->query("
+    SELECT IFNULL(SUM(total_freight),0) as total 
+    FROM lorry_receipts 
+    WHERE MONTH(lr_date)=MONTH(CURDATE()) 
+    AND YEAR(lr_date)=YEAR(CURDATE())
+");
+if ($result) {
+    $row = $result->fetch_assoc();
+    $response['monthlyFreight'] = $row['total'];
+}
+
+echo json_encode($response);
 $conn->close();
 ?>

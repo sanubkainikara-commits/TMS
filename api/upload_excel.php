@@ -1,57 +1,79 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require '../vendor/autoload.php';
 include("../config/db.php");
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-if ($_FILES['excel']['name']) {
-
-    $fileName = $_FILES['excel']['tmp_name'];
-    $spreadsheet = IOFactory::load($fileName);
-    $sheet = $spreadsheet->getActiveSheet();
-    $rows = $sheet->toArray();
-
-    // Remove header row
-    array_shift($rows);
-
-    foreach ($rows as $row) {
-
-        $invoice_number = $row[0];
-        $dealer_name = $row[1];
-        $route_name = $row[2];
-        $no_of_boxes = $row[3];
-        $gross_weight = $row[4];
-        $freight_amount = $row[5];
-        $invoice_date = $row[6];
-
-        if (!$invoice_number) continue;
-
-        $stmt = $conn->prepare("
-            INSERT INTO invoices 
-            (invoice_number, dealer_name, route_name, no_of_boxes, gross_weight, freight_amount, invoice_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-
-        $stmt->bind_param(
-            "sssidds",
-            $invoice_number,
-            $dealer_name,
-            $route_name,
-            $no_of_boxes,
-            $gross_weight,
-            $freight_amount,
-            $invoice_date
-        );
-
-        $stmt->execute();
-    }
-
-    echo "Excel Uploaded Successfully!";
-} else {
-    echo "No file selected.";
+if (!isset($_FILES['excel'])) {
+    die("No file uploaded.");
 }
 
+$file = $_FILES['excel']['tmp_name'];
+
+$spreadsheet = IOFactory::load($file);
+$sheet = $spreadsheet->getActiveSheet();
+$rows = $sheet->toArray();
+
+for ($i = 1; $i < count($rows); $i++) {
+
+    $invoice_number = trim($rows[$i][0]);
+    $sales_org = trim($rows[$i][1]);
+    $dealer_code = trim($rows[$i][2]);
+    $dealer_name = trim($rows[$i][3]);
+    $route_name = trim($rows[$i][4]);
+    $no_of_boxes = (int)$rows[$i][5];
+    $gross_weight = (float)$rows[$i][6];
+    $invoice_date = date('Y-m-d', strtotime($rows[$i][7]));
+    $total_invoice_value = (float)$rows[$i][8];
+    $place_of_delivery = trim($rows[$i][9]);
+    $pincode = trim($rows[$i][10]);
+
+    if (!$invoice_number || !$dealer_code) {
+        continue;
+    }
+
+    // Validate dealer exists
+    $stmt = $conn->prepare("SELECT id FROM dealers WHERE dealer_code=?");
+    $stmt->bind_param("s", $dealer_code);
+    $stmt->execute();
+    $dealerCheck = $stmt->get_result()->fetch_assoc();
+
+    if (!$dealerCheck) {
+        die("Dealer not found in master: " . $dealer_code);
+    }
+
+    // Insert invoice
+    $stmt = $conn->prepare("
+        INSERT INTO invoices 
+        (invoice_number, sales_org, dealer_code, dealer_name, route_name,
+         no_of_boxes, gross_weight, invoice_date,
+         total_invoice_value, place_of_delivery, pincode, status)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?, 'pending')
+    ");
+
+    $stmt->bind_param(
+        "sssssidssss",
+        $invoice_number,
+        $sales_org,
+        $dealer_code,
+        $dealer_name,
+        $route_name,
+        $no_of_boxes,
+        $gross_weight,
+        $invoice_date,
+        $total_invoice_value,
+        $place_of_delivery,
+        $pincode
+    );
+
+    if (!$stmt->execute()) {
+        die("Insert Error: " . $stmt->error);
+    }
+}
+
+echo "Invoice Upload Completed Successfully!";
 $conn->close();
 ?>
-header("Location: ../upload.php?success=1");
-exit;

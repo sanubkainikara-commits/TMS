@@ -1,0 +1,122 @@
+<h3 class="mb-4">LR Management Panel</h3>
+
+<div class="card p-3 shadow-sm mb-4">
+    <div class="row g-3">
+
+        <div class="col-md-3">
+            <label>From Date</label>
+            <input type="date" id="fromDate" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>To Date</label>
+            <input type="date" id="toDate" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>Route</label>
+            <select id="routeFilter" class="form-select">
+                <option value="">All Routes</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>Dealer</label>
+            <select id="dealerFilter" class="form-select">
+                <option value="">All Dealers</option>
+            </select>
+        </div>
+
+        <div class="col-md-12 text-end">
+            <button class="btn btn-primary" onclick="loadLRs()">Search</button>
+            <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>LR No</th>
+                    <th>Date</th>
+                    <th>Route</th>
+                    <th>Dealer</th>
+                    <th>Vehicle</th>
+                    <th>Total Inv</th>
+                    <th>Boxes</th>
+                    <th>Weight</th>
+                    <th>Freight</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="lrTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+async function loadFilters() {
+    const res = await fetch("api/fetch_lr_filters.php");
+    const data = await res.json();
+
+    const routeSelect = document.getElementById("routeFilter");
+    const dealerSelect = document.getElementById("dealerFilter");
+
+    data.routes.forEach(r => {
+        routeSelect.innerHTML += `<option value="${r}">${r}</option>`;
+    });
+
+    data.dealers.forEach(d => {
+        dealerSelect.innerHTML += `<option value="${d}">${d}</option>`;
+    });
+}
+
+async function loadLRs() {
+
+    const from = document.getElementById("fromDate").value;
+    const to = document.getElementById("toDate").value;
+    const route = document.getElementById("routeFilter").value;
+    const dealer = document.getElementById("dealerFilter").value;
+
+    const res = await fetch(`api/fetch_lrs.php?from=${from}&to=${to}&route=${route}&dealer=${dealer}`);
+    const lrs = await res.json();
+
+    const tbody = document.getElementById("lrTableBody");
+    tbody.innerHTML = "";
+
+    lrs.forEach(lr => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${lr.lr_number}</td>
+            <td>${lr.lr_date}</td>
+            <td>${lr.route_name}</td>
+            <td>${lr.dealer_name}</td>
+            <td>${lr.vehicle_number}</td>
+            <td>${lr.total_invoices}</td>
+            <td>${lr.total_boxes}</td>
+            <td>${lr.total_weight}</td>
+            <td>₹ ${parseFloat(lr.total_freight).toFixed(2)}</td>
+            <td>
+                <a href="print_lr.php?id=${lr.id}" target="_blank" 
+                   class="btn btn-sm btn-success">Reprint</a>
+            </td>
+        </tr>`;
+    });
+}
+
+function resetFilters() {
+    document.getElementById("fromDate").value = "";
+    document.getElementById("toDate").value = "";
+    document.getElementById("routeFilter").value = "";
+    document.getElementById("dealerFilter").value = "";
+    loadLRs();
+}
+
+loadFilters();
+loadLRs();
+
+</script>

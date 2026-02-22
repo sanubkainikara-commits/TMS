@@ -6,8 +6,6 @@
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
@@ -56,39 +54,46 @@
     <h4 class="text-center mb-4">MAYOORAM LLP</h4>
 
     <ul class="nav flex-column">
+
         <li class="nav-item">
-            <a class="nav-link" href="upload.php">
+            <a class="nav-link" href="#" onclick="loadPage('upload.php')">
                 <i class="bi bi-upload"></i> Upload Invoices
             </a>
         </li>
+
         <li class="nav-item">
-            <a class="nav-link" href="#" onclick="loadPage('create_lr.html')">
+            <a class="nav-link" href="#" onclick="loadPage('dealer_upload.php')">
+                <i class="bi bi-people"></i> Dealer Master
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#" onclick="loadPage('create_lr.php')">
                 <i class="bi bi-truck"></i> Create LR
             </a>
         </li>
+
         <li class="nav-item">
             <a class="nav-link" href="#" onclick="loadPage('reports.html')">
                 <i class="bi bi-bar-chart"></i> Reports
             </a>
         </li>
+
     </ul>
-</div>
+</div> <!-- 🔥 SIDEBAR CLOSED PROPERLY -->
 
 <!-- Main Content -->
 <div class="content">
 
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
-    <div class="container-fluid d-flex justify-content-between">
-        
-        <span class="navbar-brand">Transport Management System</span>
-        
-        <button class="btn btn-primary" onclick="goHome()">
-            🏠 Home Dashboard
-        </button>
-
-    </div>
-</nav>
+        <div class="container-fluid d-flex justify-content-between">
+            <span class="navbar-brand">Transport Management System</span>
+            <button class="btn btn-primary" onclick="goHome()">
+                🏠 Home Dashboard
+            </button>
+        </div>
+    </nav>
 
     <!-- Dashboard Cards -->
     <div id="dashboardCards" class="row g-4 mb-4">
@@ -96,14 +101,14 @@
         <div class="col-md-3">
             <div class="card card-dashboard card-blue p-3">
                 <h6>Today's Freight</h6>
-                <h3 id="todayFreight">₹0</h3>
+                <h3 id="todayFreight">₹0.00</h3>
             </div>
         </div>
 
         <div class="col-md-3">
             <div class="card card-dashboard card-green p-3">
                 <h6>Monthly Freight</h6>
-                <h3 id="monthlyFreight">₹0</h3>
+                <h3 id="monthlyFreight">₹0.00</h3>
             </div>
         </div>
 
@@ -158,14 +163,14 @@ async function loadDashboardStats() {
     document.getElementById("totalLRs").innerText = data.totalLRs;
 }
 
-loadDashboardStats();
 function goHome() {
     document.getElementById("contentArea").innerHTML = "";
     document.getElementById("dashboardCards").style.display = "flex";
-    loadDashboardStats(); // refresh stats
+    loadDashboardStats();
 }
-</script>
 
+loadDashboardStats();
+</script>
 
 </body>
 </html>
